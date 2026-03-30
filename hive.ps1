@@ -49,11 +49,21 @@ $configPath = Join-Path (Join-Path $env:USERPROFILE ".hive") "configuration.json
 if (Test-Path $configPath) {
     try {
         $config = Get-Content $configPath -Raw | ConvertFrom-Json
+        # 1. Load Queen LLM key
         $envVarName = $config.llm.api_key_env_var
         if ($envVarName) {
             $val = [System.Environment]::GetEnvironmentVariable($envVarName, "User")
             if ($val -and -not (Test-Path "Env:\$envVarName" -ErrorAction SilentlyContinue)) {
                 Set-Item -Path "Env:\$envVarName" -Value $val
+            }
+        }
+
+        # 2. Load Worker LLM key (if different)
+        $workerVar = $config.worker_llm.api_key_env_var
+        if ($workerVar -and $workerVar -ne $envVarName) {
+            $val = [System.Environment]::GetEnvironmentVariable($workerVar, "User")
+            if ($val -and -not (Test-Path "Env:\$workerVar" -ErrorAction SilentlyContinue)) {
+                Set-Item -Path "Env:\$workerVar" -Value $val
             }
         }
     } catch {
